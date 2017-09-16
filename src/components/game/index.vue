@@ -9,8 +9,9 @@
 		</div>
 		<div class="game-info">
 			<h3>比赛信息</h3>
-			<!-- 比分,球员信息,球队信息 -->
-			<!-- 比分 -->
+			<!-- 比赛用时 -->
+			<TimeGo :timeGoGameTime="gameTime.currentTime"></TimeGo>
+			<!-- 比分,球员信息,球队信息,比赛用时 -->
 			<div class="box">
 				<FormEle :lists="formLists"></FormEle>
 			</div>
@@ -33,7 +34,7 @@
 					<span class="player player-pg" :class="{'bg-green-default': (playerRight === 'pg' && offensiveTeam === 'away'), 'bg-red-info': playerRight !== 'pg'}">PG</span>
 				</div>
 			</div>
-			<div class="btn game-start" @click="gameStart">开始比赛</div>
+			<div class="btn game-start" :class="{'game-start-flag': gameStartFlag}" @click="gameStart">开始比赛</div>
 		</div>
 		<div class="game-statistics">
 			<h3>比赛统计</h3>
@@ -44,6 +45,7 @@
 
 <script>
 	import FormEle from '../base/form.vue'
+	import TimeGo from './timeGo.vue'
 	export default {
 		name: 'Game',
 		data(){
@@ -51,6 +53,13 @@
 				offensiveTeam: '',
 				defensiveTeam: '',
 				playerRight: '',
+				defaultGameTime: 12*60,  // 默认的比赛时间
+				defaultSections: 4, // 比赛默认节次
+				currentSection: 1, // 当前比赛节次
+				gameStartFlag: false,
+				gameTime: {
+					currentTime: 12*60
+				},
 				originData: {
 					home: {
 						players: {
@@ -137,11 +146,14 @@
 			}
 		},
 		components:{
-			FormEle
+			FormEle,
+			TimeGo
 		},
 		methods: {
 			gameStart(){
-				this.fightBall();
+				!this.gameStartFlag && this.fightBall();
+				this.gameStartFlag = true;
+				this.timeGo();
 			},
 			// 争球
 			fightBall(){
@@ -165,7 +177,7 @@
 			// 进攻
 			offensive(){
 				var _this = this;
-				setInterval(function(){
+				this.gameBegining = setInterval(function(){
 
 					_this.playerRight = _this.ballIsIn();
 					_this.goal();
@@ -249,19 +261,28 @@
 			},
 			// 获取能力值
 			getAbility(parmas){
+
 				return this.originData[parmas.team].players[parmas.playerPos][parmas.ability]
+			},
+			// 比赛倒计时
+			timeGo(){
+
+				this.gameTimer = setInterval(()=>{
+					// this.gameTime.
+				}, 1000);
 			}
 		}
 	}
 </script>
 
 <style scoped lang="less">
+	@import url("../../../global/less/variables.less");
+	@import url("../../../global/less/public.less");
 	.game-info{
-		height: 120px;
 		.box{
 			height: 90px;
 			overflow-y: scroll;
-			border: 1px solid #ccc;
+			.border(1px,@white-warning);
 		}
 	}
 	.game-box{
@@ -274,10 +295,16 @@
 			top: 50%;
 			padding: 10px;
 			margin: -30px 0 0 -30px;
-			background-color: red;
-			color: #fff;
+			background-color: @red-default;
+			color: @white-default;
 			text-align: center;
 			border-radius: 100%;
+			cursor: pointer;
+		}
+		.btn.game-start-flag{
+			background-color: @white-normal;
+			color: @white-info;
+			cursor: wait;
 		}
 	}
 	.game-scene{
@@ -285,7 +312,7 @@
 		.game-team{
 			flex: 1;
 			height: 400px;
-			border: 1px solid #666;
+			.border(1px,@white-less);
 			text-align: center;
 			line-height: 400px;
 		}
@@ -294,7 +321,6 @@
 		height: 50px;
 		width: 50px;
 		border-radius: 100%;
-		border: 1px solid #ccc;
 		display: inline-block;
 		line-height: 50px;
 		position: absolute;
