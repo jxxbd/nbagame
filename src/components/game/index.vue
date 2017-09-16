@@ -264,12 +264,12 @@
 
 				return this.originData[parmas.team].players[parmas.playerPos][parmas.ability]
 			},
-			// 比赛倒计时
+			// 计时开始
 			timeGo(){
 
-				this.gameTimer = setInterval(()=>{
-					// this.gameTime.
-				}, 1000);
+				this.timeGoTimer = setInterval(()=>{
+					this.gameTime.currentTime--;
+				}, 1000)
 			}
 		}
 	}

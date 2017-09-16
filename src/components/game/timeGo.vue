@@ -1,8 +1,8 @@
 <template>
 	<div class="game-timeGo red-warning text-center font32">
-		<span class="minutes time-item">{{gameMinutes}}</span>
+		<span class="minutes time-item">{{minutesTime}}</span>
 		:
-		<span class="second time-item">{{gameSeconds}}</span>
+		<span class="second time-item">{{secondsTime}}</span>
 	</div>
 </template>
 
@@ -11,8 +11,14 @@
 		name: 'TimeGo',
 		data(){
 			return {
-				gameMinutes: '12',
-				gameSeconds: '00'
+			}
+		},
+		computed: {
+			minutesTime(){
+				return this.timeGoGameTime % 60
+			},
+			secondsTime(){
+				return Math.floor(this.timeGoGameTime / 60) < 10 ? ( '0' + Math.floor(this.timeGoGameTime / 60) ) : ( '' + Math.floor(this.timeGoGameTime / 60) );
 			}
 		},
 		props: ['timeGoGameTime'],
