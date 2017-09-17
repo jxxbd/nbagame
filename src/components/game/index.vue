@@ -1,6 +1,8 @@
 <template>
 	<div class="game">
 		<div class="game-function">
+			{{reboundValHome}}
+			{{reboundValAway}}
 			<h3>比赛功能</h3>			
 			<input type="button" value="暂停">
 			<input type="button" value="换人">
@@ -8,16 +10,16 @@
 			<!-- 暂停,换人等 -->
 		</div>
 		<div class="game-info">
-			<h3>比赛信息</h3>
+			<h3>现场</h3>
 			<!-- 比赛用时 -->
-			<TimeGo :timeGoGameTime="gameTime.currentTime"></TimeGo>
-			<!-- 比分,球员信息,球队信息,比赛用时 -->
-			<div class="box">
-				<FormEle :lists="formLists"></FormEle>
-			</div>
+			<TimeGo></TimeGo>
+			<!-- 实时战况 -->
+			<Situation></Situation>
+			<!-- 比赛信息 -->
+			<!-- <FormEle :lists="formLists" boxTitle="比赛信息" class="text-center"></FormEle> -->
 		</div>
 		<div class="game-box">
-			<h3>比赛现场</h3>
+			<h3>球场表现</h3>
 			<div class="game-scene">
 				<div class="game-team game-home">
 					<span class="player player-c" :class="{'bg-green-default': (playerRight === 'c' && offensiveTeam === 'home'), 'bg-blue-info': playerRight !== 'c'}">C</span>
@@ -37,7 +39,7 @@
 			<div class="btn game-start" :class="{'game-start-flag': gameStartFlag}" @click="gameStart">开始比赛</div>
 		</div>
 		<div class="game-statistics">
-			<h3>比赛统计</h3>
+			<h3>赛后统计</h3>
 			<!-- 球员实时比赛数据 -->
 		</div>
 	</div>
@@ -46,6 +48,8 @@
 <script>
 	import FormEle from '../base/form.vue'
 	import TimeGo from './timeGo.vue'
+	import Situation from './situation.vue'
+
 	export default {
 		name: 'Game',
 		data(){
@@ -53,79 +57,85 @@
 				offensiveTeam: '',
 				defensiveTeam: '',
 				playerRight: '',
-				defaultGameTime: 12*60,  // 默认的比赛时间
-				defaultSections: 4, // 比赛默认节次
-				currentSection: 1, // 当前比赛节次
 				gameStartFlag: false,
-				gameTime: {
-					currentTime: 12*60
-				},
 				originData: {
 					home: {
+						teamName: '马刺',
 						players: {
-							pf: {
+							c: {
 								name: '加索尔',
 								ability: '81',
 								offVal: '88',
-								denVal: '67'
+								denVal: '67',
+								rebVal: '94'
 							},
-							sf: {
+							pf: {
 								name: '阿尔德里奇',
 								ability: '88',
 								offVal: '88',
-								denVal: '88'
+								denVal: '88',
+								rebVal: '96'
 							},
-							pg: {
+							sf: {
 								name: '伦纳德',
 								ability: '93',
 								offVal: '90',
-								denVal: '99'
+								denVal: '99',
+								rebVal: '88'
 							},
 							sg: {
 								name: '吉诺比利',
 								ability: '84',
 								offVal: '80',
-								denVal: '74'
+								denVal: '74',
+								rebVal: '70'
 							},
-							c: {
+							pg: {
 								name: '帕克',
 								ability: '85',
 								offVal: '88',
-								denVal: '67'
+								denVal: '67',
+								rebVal: '65'
 							}
 						}
 					},
 					away: {
+						teamName: '勇士',
 						players: {
 							c: {
 								name: '帕楚利亚',
 								ability: '69',
 								offVal: '60',
-								denVal: '79'
+								denVal: '79',
+								rebVal: '80'
 							},
 							pf: {
 								name: '格林',
 								ability: '88',
 								offVal: '80',
-								denVal: '94'
+								denVal: '94',
+								rebVal: '89'
 							},
 							sf: {
 								name: '杜兰特',
 								ability: '94',
 								offVal: '97',
-								denVal: '85'
+								denVal: '85',
+								rebVal: '88'
 							},
 							sg: {
 								name: '汤普森',
 								ability: '84',
 								offVal: '82',
-								denVal: '90'
+								denVal: '90',
+								rebVal: '76'
 							},
 							pg: {
 								name: '库里',
 								ability: '93',
 								offVal: '96',
-								denVal: '80'
+								denVal: '80',
+								rebVal: '70'
 							},
 						}
 					}
@@ -147,10 +157,15 @@
 		},
 		components:{
 			FormEle,
-			TimeGo
+			TimeGo,
+			Situation
 		},
 		methods: {
 			gameStart(){
+				this.$store.commit({
+					type: 'updateGameInfo',
+					gameInfo: {infomation: `第${this.$store.state.gameRounds.currentRound}节比赛开始`, team: this.offensiveTeam}
+				})
 				!this.gameStartFlag && this.fightBall();
 				this.gameStartFlag = true;
 				this.timeGo();
@@ -158,11 +173,10 @@
 			// 争球
 			fightBall(){
 				// 争球
-				var ranData = Math.random();
-				var homePlayerValue = this.getAbility({team:'home',ability:'ability', playerPos:'c'});
-				var awayPlayerValue = this.getAbility({team:'away',ability:'ability', playerPos: 'c'});
-				// console.log(ranData, homePlayerValue, awayPlayerValue);
-				var criticalVal = homePlayerValue/(parseInt(homePlayerValue)+parseInt(awayPlayerValue));
+				let ranData = Math.random();
+				let homePlayerValue = this.getAbility({team:'home',ability:'ability', playerPos:'c'});
+				let awayPlayerValue = this.getAbility({team:'away',ability:'ability', playerPos: 'c'});
+				let criticalVal = homePlayerValue/(parseInt(homePlayerValue)+parseInt(awayPlayerValue));
 				if( ranData > criticalVal ){
 					// away
 					this.offensiveTeam = 'away';
@@ -171,22 +185,33 @@
 					// home
 					this.offensiveTeam = 'home';
 					this.defensiveTeam = 'away';
-				}
+				};
+				let teamName = this.originData[this.offensiveTeam].teamName;
+				// 更新争球信息
+				this.$store.commit({
+					type: 'updateGameInfo',
+					gameInfo: {infomation: `${teamName}队获得球权`, team: this.offensiveTeam}
+				})
 				this.offensive();
 			},
 			// 进攻
 			offensive(){
-				var _this = this;
-				this.gameBegining = setInterval(function(){
-
-					_this.playerRight = _this.ballIsIn();
-					_this.goal();
-					// console.log(`the ball is in ${player} \`s hands` );
-					_this.changeBallRight();
+				this.gameBegining = setInterval(()=>{
+					let pos = this.ballIsIn();
+					this.playerRight = pos;
+					this.playerRightName = this.originData[this.offensiveTeam].players[pos].name;
+					this.goal();
+					// 更新实时得分记录
+					this.$store.commit({
+						type: 'updateGameInfo',
+						gameInfo: {infomation: `the ball is in ${this.playerRightName} \`s hands`, team: this.offensiveTeam}
+					})
+					this.changeBallRight();
 				},2000)
 			},
 			// 计算球在哪个球员手上
 			ballIsIn(){
+
 				var player = '';
 				var rnData = Math.random();
 				var cVal = this.getAbility({team:this.offensiveTeam, ability:'ability', playerPos: 'c'});
@@ -219,6 +244,15 @@
 				}
 				return player;
 			},
+			// 计算该球员下一步的行动 action
+			nextAction(){
+				// 计算主队的篮板球能力
+				
+			},
+			// 计算篮板球概率
+			rebound(){
+
+			},
 			// 计算进球概率
 			goal(){
 				var rnData = Math.random();
@@ -239,13 +273,31 @@
 			scoreFn(){
 				var player = this.originData[this.offensiveTeam].players[this.playerRight].name;
 				console.log( `${player} has get 2` );
+				this.$store.commit({
+					type: 'updateGameInfo',
+					gameInfo: {
+						infomation: `${player} has get 2`,
+						 team: this.offensiveTeam
+						}
+					});
+				// 更新得分
 				if( this.offensiveTeam === 'home' ){
-					var iNow = 0;
+					this.$store.commit({
+						type: 'updateGameScore',
+						gameScoreParmas: {
+							team: 'home',
+							score: 2
+						}
+					})
 				}else{
-					var iNow = 1;
-				}
-				this.formLists[1].score[iNow] += 2;
-				console.log( this.formLists[1].score[iNow] )
+					this.$store.commit({
+						type: 'updateGameScore',
+						gameScoreParmas: {
+							team: 'away',
+							score: 2
+						}
+					})
+				}	
 			},
 			// 交换球权
 			changeBallRight(){
@@ -268,14 +320,27 @@
 			timeGo(){
 
 				this.timeGoTimer = setInterval(()=>{
-					this.gameTime.currentTime--;
+					this.$store.commit({type: 'timeGo'});
+					if( this.$store.state.gameTime.currentTime <= 0 ) {
+						clearInterval( this.timeGoTimer );
+					}
 				}, 1000)
+			}
+		},
+		computed: {
+			reboundValHome(){
+				let players = this.originData.home.players;
+				return players.c.rebVal * this._global.reboundRatioC +  players.pf.rebVal * this._global.reboundRatioPF + players.sf.rebVal * this._global.reboundRatioSF + players.sg.rebVal * this._global.reboundRatioSG + players.pg.rebVal * this._global.reboundRatioPG;
+			},
+			reboundValAway(){
+				let players = this.originData.away.players;
+				return players.c.rebVal * this._global.reboundRatioC +  players.pf.rebVal * this._global.reboundRatioPF + players.sf.rebVal * this._global.reboundRatioSF + players.sg.rebVal * this._global.reboundRatioSG + players.pg.rebVal * this._global.reboundRatioPG;
 			}
 		}
 	}
 </script>
 
-<style scoped lang="less">
+<style scoped lang="less" scoped>
 	@import url("../../../global/less/variables.less");
 	@import url("../../../global/less/public.less");
 	.game-info{
@@ -307,7 +372,7 @@
 			cursor: wait;
 		}
 	}
-	.game-scene{
+	.game-scene{	
 		display: flex;
 		.game-team{
 			flex: 1;

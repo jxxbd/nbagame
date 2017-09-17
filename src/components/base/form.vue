@@ -1,5 +1,6 @@
 <template>
 	<div class="form">
+		<p v-if="boxTitle">{{boxTitle}}</p>
 		<ul>
 			<li v-for="items in lists" class="items">
 				<div v-if="isObj(items)" class="item-box">
@@ -32,7 +33,7 @@
 		computed: {
 
 		},
-		props:['lists']
+		props:['lists','boxTitle']
 	}
 </script>
 

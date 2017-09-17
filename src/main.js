@@ -3,14 +3,17 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
+import store from './store'
 import baseStyle from '../global/less/base.less'
+import rule from '../global/js/rule.js'
 
 Vue.config.productionTip = false
-
+Vue.prototype._global = rule;
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
   router,
+  store,
   template: '<App/>',
   components: { App }
 })

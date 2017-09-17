@@ -17,7 +17,7 @@ export default {
 }
 </script>
 
-<style>
+<style lang="less">
   a{
     text-decoration: none;
   }
