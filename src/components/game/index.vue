@@ -196,36 +196,38 @@
 			},
 			// 进攻
 			offensive(){
-				this.gameBegining = setInterval(()=>{
-					let pos = this.ballIsIn();
+
+				setTimeout(()=>{
+
+					let pos = this.ballIsIn(this.offensiveTeam, 'ability');
 					this.playerRight = pos;
-					this.playerRightName = this.originData[this.offensiveTeam].players[pos].name;
+					// this.playerRightName = this.originData[this.offensiveTeam].players[pos].name;
+					this.playerRightName = this._global.getPlayerNameByPos.call(this, this.offensiveTeam, pos);
 					this.goal();
 					// 更新实时得分记录
 					this.$store.commit({
 						type: 'updateGameInfo',
 						gameInfo: {infomation: `the ball is in ${this.playerRightName} \`s hands`, team: this.offensiveTeam}
 					})
-					this.changeBallRight();
-				},2000)
+				}, 2000);
 			},
 			// 计算球在哪个球员手上
-			ballIsIn(){
+			ballIsIn(team,abt){
 
-				var player = '';
-				var rnData = Math.random();
-				var cVal = this.getAbility({team:this.offensiveTeam, ability:'ability', playerPos: 'c'});
-				var pfVal = this.getAbility({team:this.offensiveTeam, ability:'ability', playerPos: 'pf'});
-				var sfVal = this.getAbility({team:this.offensiveTeam, ability:'ability', playerPos: 'sf'});
-				var sgVal = this.getAbility({team:this.offensiveTeam, ability:'ability', playerPos: 'sg'});
-				var pgVal = this.getAbility({team:this.offensiveTeam, ability:'ability', playerPos: 'pg'});
-				var sum = parseInt(cVal) + parseInt(pfVal) + parseInt(sfVal) + parseInt(sgVal) + parseInt(pgVal);
+				let player = '';
+				let rnData = Math.random();
+				let cVal = this.getAbility({team : team, ability: abt, playerPos: 'c'});
+				let pfVal = this.getAbility({team: team, ability: abt, playerPos: 'pf'});
+				let sfVal = this.getAbility({team: team, ability: abt, playerPos: 'sf'});
+				let sgVal = this.getAbility({team: team, ability: abt, playerPos: 'sg'});
+				let pgVal = this.getAbility({team: team, ability: abt, playerPos: 'pg'});
+				let sum = parseInt(cVal) + parseInt(pfVal) + parseInt(sfVal) + parseInt(sgVal) + parseInt(pgVal);
 
-				var cCritical = cVal/sum;
-				var pfCritical = pfVal/sum + cCritical;
-				var sfCritical = sfVal/sum + pfCritical;
-				var sgCritical = sgVal/sum + sfCritical;
-				var pgCritical = pgVal/sum;
+				let cCritical = cVal/sum;
+				let pfCritical = pfVal/sum + cCritical;
+				let sfCritical = sfVal/sum + pfCritical;
+				let sgCritical = sgVal/sum + sfCritical;
+				let pgCritical = pgVal/sum;
 
 				if(rnData < cCritical){
 					player = 'c';
@@ -245,9 +247,24 @@
 				return player;
 			},
 			// 计算该球员下一步的行动 action
-			nextAction(){
-				// 计算主队的篮板球能力
-				
+			reboundAction(){
+				// 计算进攻/防守的篮板球获得概率
+				let offRebRat = this['reboundVal' + this._global.firstWordToUpper(this.offensiveTeam)] * this._global.reboundRatioOff;
+				let defRebRat = this['reboundVal' + this._global.firstWordToUpper(this.defensiveTeam)] * this._global.reboundRatioDef;
+
+				let ratio = offRebRat / (defRebRat + offRebRat);  // 进攻篮板获得比例
+				let ran = Math.random();
+
+				let team = ran < ratio ? this.offensiveTeam : this.defensiveTeam;
+				let pos = this.ballIsIn(team, 'rebVal');
+				let player = this._global.getPlayerNameByPos.call(this, team, pos);
+				console.log( `${player} 获得了篮板球`, team );
+
+				// 交换球权
+				this.changeBallRight(team);
+
+				// 进攻
+				this.offensive();
 			},
 			// 计算篮板球概率
 			rebound(){
@@ -255,31 +272,33 @@
 			},
 			// 计算进球概率
 			goal(){
-				var rnData = Math.random();
-				var offensiveVal = this.getAbility({team: this.offensiveTeam, playerPos: this.playerRight, ability: 'offVal'});
-				var denfensiveVal = this.getAbility({team: this.defensiveTeam, playerPos: this.playerRight, ability: 'denVal'});
+				let rnData = Math.random();
+				let offensiveVal = this.getAbility({team: this.offensiveTeam, playerPos: this.playerRight, ability: 'offVal'});
+				let denfensiveVal = this.getAbility({team: this.defensiveTeam, playerPos: this.playerRight, ability: 'denVal'});
 
-				var res = (offensiveVal - denfensiveVal/2)/100;
-				console.log(`进球概率 ${res}`);
-				if( rnData < res ){
+				let res = (offensiveVal - denfensiveVal/2)/100;
+				if( rnData < res ){  // 进球
 					// console.log('done');
 					this.scoreFn();
-				}else{
-					var playerName = this.originData[this.offensiveTeam].players[this.playerRight].name;
-					console.log( `${playerName} has lost` );
+					this.changeBallRight(this.defensiveTeam);
+					this.offensive();
+				}else{  // 打铁
+					let playerName = this.originData[this.offensiveTeam].players[this.playerRight].name;
+					console.log( `${playerName} 打铁了` );
+					this.reboundAction();
 				}
 			},
 			// 得分
 			scoreFn(){
-				var player = this.originData[this.offensiveTeam].players[this.playerRight].name;
-				console.log( `${player} has get 2` );
+				let player = this.originData[this.offensiveTeam].players[this.playerRight].name;
+				console.log( `${player} 得到两分` );
 				this.$store.commit({
 					type: 'updateGameInfo',
 					gameInfo: {
-						infomation: `${player} has get 2`,
-						 team: this.offensiveTeam
-						}
-					});
+						infomation: `${player} 得到两分`,
+						team: this.offensiveTeam
+					}
+				});
 				// 更新得分
 				if( this.offensiveTeam === 'home' ){
 					this.$store.commit({
@@ -297,11 +316,12 @@
 							score: 2
 						}
 					})
-				}	
+				}
 			},
-			// 交换球权
-			changeBallRight(){
-				if( this.offensiveTeam === 'home' ){
+			// 当前球权所属球队
+			changeBallRight(team){
+				this.offensiveTeam = team;  
+				if( this.defensiveTeam === 'home' ){
 					// away
 					this.offensiveTeam = 'away';
 					this.defensiveTeam = 'home';
@@ -330,11 +350,11 @@
 		computed: {
 			reboundValHome(){
 				let players = this.originData.home.players;
-				return players.c.rebVal * this._global.reboundRatioC +  players.pf.rebVal * this._global.reboundRatioPF + players.sf.rebVal * this._global.reboundRatioSF + players.sg.rebVal * this._global.reboundRatioSG + players.pg.rebVal * this._global.reboundRatioPG;
+				return (players.c.rebVal * this._global.reboundRatioC +  players.pf.rebVal * this._global.reboundRatioPF + players.sf.rebVal * this._global.reboundRatioSF + players.sg.rebVal * this._global.reboundRatioSG + players.pg.rebVal * this._global.reboundRatioPG).toFixed(2);
 			},
 			reboundValAway(){
 				let players = this.originData.away.players;
-				return players.c.rebVal * this._global.reboundRatioC +  players.pf.rebVal * this._global.reboundRatioPF + players.sf.rebVal * this._global.reboundRatioSF + players.sg.rebVal * this._global.reboundRatioSG + players.pg.rebVal * this._global.reboundRatioPG;
+				return (players.c.rebVal * this._global.reboundRatioC +  players.pf.rebVal * this._global.reboundRatioPF + players.sf.rebVal * this._global.reboundRatioSF + players.sg.rebVal * this._global.reboundRatioSG + players.pg.rebVal * this._global.reboundRatioPG).toFixed(2);
 			}
 		}
 	}
