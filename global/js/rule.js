@@ -4,9 +4,22 @@ export default {
 	reboundRatioSF : 0.20,
 	reboundRatioSG : 0.12,
 	reboundRatioPG : 0.08,
-	reboundRatioDef: 0.35,  // 进攻篮板率
-	reboundRatioOff: 0.65,	// 防守篮板率
+	reboundRatioDef: 0.35,
+	reboundRatioOff: 0.65,
 
+	// 各阶段的传球概率
+	passProba1: 0.9,
+	passProba2: 0.75,
+	passProba3: 0.6,
+	passProba4: 0.3,
+	passProba5: 0.1,
+
+	// 阶段时间比例
+	timeRat1: 0.2,
+	timeRat1: 0.4,
+	timeRat1: 0.6,
+	timeRat1: 0.8,
+	timeRat1: 1,
 
 	//方法
 	// 首字母转大写

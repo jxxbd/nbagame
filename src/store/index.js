@@ -11,9 +11,10 @@ const store = new Vuex.Store({
 		},
 		gameRounds: {  // 比赛回合
 			defaultRounds: 4,
-			currentRound: 1
+			currentRound: 1,
+			roundTime: 24
 		},
-		gameInfoRealTime: {  // 比赛信息列表
+		gameInfoRealTime: {  // 比赛实时详情
 			infoList: []
 		},
 		gameScore: {
@@ -35,6 +36,13 @@ const store = new Vuex.Store({
 				state.gameScore.homeScore += score;
 			}else if(team === 'away'){
 				state.gameScore.awayScore += score;
+			}
+		},
+		updateGameRoundsRoundTime(state, flag) {
+			if( flag === 'over' ) {
+				state.gameRounds.roundTime = 24;
+			} else {
+				state.gameRounds.roundTime -= 1;
 			}
 		}
 	},

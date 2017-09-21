@@ -1,8 +1,6 @@
 <template>
 	<div class="game">
 		<div class="game-function">
-			{{reboundValHome}}
-			{{reboundValAway}}
 			<h3>比赛功能</h3>			
 			<input type="button" value="暂停">
 			<input type="button" value="换人">
@@ -12,12 +10,15 @@
 		<div class="game-info">
 			<h3>现场</h3>
 			<!-- 比赛用时 -->
-			<TimeGo></TimeGo>
+			<TimeGo>
+				<RoundTime slot="roundtime"></RoundTime>
+			</TimeGo>
 			<!-- 实时战况 -->
 			<Situation></Situation>
 			<!-- 比赛信息 -->
 			<!-- <FormEle :lists="formLists" boxTitle="比赛信息" class="text-center"></FormEle> -->
 		</div>
+		<!-- 球场表现 -->
 		<div class="game-box">
 			<h3>球场表现</h3>
 			<div class="game-scene">
@@ -49,7 +50,9 @@
 	import FormEle from '../base/form.vue'
 	import TimeGo from './timeGo.vue'
 	import Situation from './situation.vue'
+	import RoundTime from './roundTime.vue'
 
+	const allRoundTime = 24;
 	export default {
 		name: 'Game',
 		data(){
@@ -150,15 +153,18 @@
 					{'SG': ['mn', '84', '15', '8', '0', '1', '1', '21']},
 					{'PG': ['pk', '85', '15', '8', '0', '1', '1', '21']},
 				],
-				gameResultList:[
-
-				]
+				gameResultList:[],
+				playerActions: {
+					passA: this.passAFn,
+					shootA: this.goal
+				}
 			}
 		},
 		components:{
 			FormEle,
 			TimeGo,
-			Situation
+			Situation,
+			RoundTime
 		},
 		methods: {
 			gameStart(){
@@ -172,7 +178,6 @@
 			},
 			// 争球
 			fightBall(){
-				// 争球
 				let ranData = Math.random();
 				let homePlayerValue = this.getAbility({team:'home',ability:'ability', playerPos:'c'});
 				let awayPlayerValue = this.getAbility({team:'away',ability:'ability', playerPos: 'c'});
@@ -198,18 +203,27 @@
 			offensive(){
 
 				setTimeout(()=>{
-
 					let pos = this.ballIsIn(this.offensiveTeam, 'ability');
 					this.playerRight = pos;
-					// this.playerRightName = this.originData[this.offensiveTeam].players[pos].name;
 					this.playerRightName = this._global.getPlayerNameByPos.call(this, this.offensiveTeam, pos);
-					this.goal();
+
+					// 得到下一步的行动
+					let actionName = nextAction(pos);
+
+					// 执行下一步动作
+					this.playerActions[actionName](pos);
+
 					// 更新实时得分记录
 					this.$store.commit({
 						type: 'updateGameInfo',
 						gameInfo: {infomation: `the ball is in ${this.playerRightName} \`s hands`, team: this.offensiveTeam}
-					})
-				}, 2000);
+					});
+				}, 4000);
+			},
+			// 传球
+			passAFn(){
+
+
 			},
 			// 计算球在哪个球员手上
 			ballIsIn(team,abt){
@@ -246,7 +260,50 @@
 				}
 				return player;
 			},
-			// 计算该球员下一步的行动 action
+			// 计算该球员下一步的 action
+			nextAction(){
+
+				// action -> pass || shoot
+				let actionName = '';
+
+				// 获取时间比例
+				let timeRat = this.$store.gameRounds.roundTime / allRoundTime;
+				let passRat = 0;
+				let ran = Math.random();
+
+				if( timeRat < this._global.timeRat1 ) {
+
+					passRat = this._global.passProba1;
+				} else if ( timeRat < this._global.timeRat2 ) {
+
+					passRat = this._global.passProba2;
+				} else if ( timeRat < this._global.timeRat3 ) {
+					
+					passRat = this._global.passProba3;
+				} else if ( timeRat < this._global.timeRat4 ) {
+					
+					passRat = this._global.passProba4;
+				} else if ( timeRat < this._global.timeRat5 ) {
+					
+					passRat = this._global.passProba5;
+				}
+
+				return getAction(ran, passRat);
+
+				function getAction(ran, rat){
+
+					if ( ran < rat ) {
+
+						console.log(`${this.playerRightName} pass the ball`);
+						return 'passA';
+					} else {
+
+						console.log(`${this.playerRightName} will shoot`);
+						return 'shootA';
+					}
+				}
+			},
+			// 计算篮板概率
 			reboundAction(){
 				// 计算进攻/防守的篮板球获得概率
 				let offRebRat = this['reboundVal' + this._global.firstWordToUpper(this.offensiveTeam)] * this._global.reboundRatioOff;
@@ -266,10 +323,6 @@
 				// 进攻
 				this.offensive();
 			},
-			// 计算篮板球概率
-			rebound(){
-
-			},
 			// 计算进球概率
 			goal(){
 				let rnData = Math.random();
@@ -278,8 +331,8 @@
 
 				let res = (offensiveVal - denfensiveVal/2)/100;
 				if( rnData < res ){  // 进球
-					// console.log('done');
 					this.scoreFn();
+					console.log(`球进了,球权转到${this.defensiveTeam}`);
 					this.changeBallRight(this.defensiveTeam);
 					this.offensive();
 				}else{  // 打铁
@@ -300,28 +353,18 @@
 					}
 				});
 				// 更新得分
-				if( this.offensiveTeam === 'home' ){
-					this.$store.commit({
-						type: 'updateGameScore',
-						gameScoreParmas: {
-							team: 'home',
-							score: 2
-						}
-					})
-				}else{
-					this.$store.commit({
-						type: 'updateGameScore',
-						gameScoreParmas: {
-							team: 'away',
-							score: 2
-						}
-					})
-				}
+				this.$store.commit({
+					type: 'updateGameScore',
+					gameScoreParmas: {
+						team: this.offensiveTeam,
+						score: 2
+					}
+				})
 			},
 			// 当前球权所属球队
 			changeBallRight(team){
-				this.offensiveTeam = team;  
-				if( this.defensiveTeam === 'home' ){
+				this.defensiveTeam = team;  
+				if( this.defensiveTeam === 'away' ){
 					// away
 					this.offensiveTeam = 'away';
 					this.defensiveTeam = 'home';
@@ -330,6 +373,10 @@
 					this.offensiveTeam = 'home';
 					this.defensiveTeam = 'away';
 				}
+				this.$store.commit({
+					type: 'updateGameRoundsRoundTime',
+					flag: 'over'
+				});
 			},
 			// 获取能力值
 			getAbility(parmas){
@@ -343,7 +390,11 @@
 					this.$store.commit({type: 'timeGo'});
 					if( this.$store.state.gameTime.currentTime <= 0 ) {
 						clearInterval( this.timeGoTimer );
-					}
+					};
+					this.$store.commit({
+						type: 'updateGameRoundsRoundTime',
+						flag: ''
+					});
 				}, 1000)
 			}
 		},

@@ -1,5 +1,6 @@
 <template>
 	<div class="game-timeGo red-warning text-center">
+		<slot name="roundtime"></slot>
 		<div class="game-home-score game-score flex-box blue-info">
 			主场：
 			<span class="score-box">{{homeScore}}</span>
