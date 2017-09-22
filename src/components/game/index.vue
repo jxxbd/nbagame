@@ -67,38 +67,38 @@
 						players: {
 							c: {
 								name: '加索尔',
-								ability: '81',
-								offVal: '88',
-								denVal: '67',
-								rebVal: '94'
+								ability: 81,
+								offVal: 88,
+								denVal: 67,
+								rebVal: 94
 							},
 							pf: {
 								name: '阿尔德里奇',
-								ability: '88',
-								offVal: '88',
-								denVal: '88',
-								rebVal: '96'
+								ability: 88,
+								offVal: 88,
+								denVal: 88,
+								rebVal: 96
 							},
 							sf: {
 								name: '伦纳德',
-								ability: '93',
-								offVal: '90',
-								denVal: '99',
-								rebVal: '88'
+								ability: 93,
+								offVal: 90,
+								denVal: 99,
+								rebVal: 88
 							},
 							sg: {
 								name: '吉诺比利',
-								ability: '84',
-								offVal: '80',
-								denVal: '74',
-								rebVal: '70'
+								ability: 78,
+								offVal: 80,
+								denVal: 74,
+								rebVal: 70
 							},
 							pg: {
 								name: '帕克',
-								ability: '85',
-								offVal: '88',
-								denVal: '67',
-								rebVal: '65'
+								ability: 85,
+								offVal: 88,
+								denVal: 67,
+								rebVal: 65
 							}
 						}
 					},
@@ -107,38 +107,38 @@
 						players: {
 							c: {
 								name: '帕楚利亚',
-								ability: '69',
-								offVal: '60',
-								denVal: '79',
-								rebVal: '80'
+								ability: 69,
+								offVal: 60,
+								denVal: 79,
+								rebVal: 80
 							},
 							pf: {
 								name: '格林',
-								ability: '88',
-								offVal: '80',
-								denVal: '94',
-								rebVal: '89'
+								ability: 88,
+								offVal: 80,
+								denVal: 94,
+								rebVal: 89
 							},
 							sf: {
 								name: '杜兰特',
-								ability: '94',
-								offVal: '97',
-								denVal: '85',
-								rebVal: '88'
+								ability: 94,
+								offVal: 97,
+								denVal: 85,
+								rebVal: 88
 							},
 							sg: {
 								name: '汤普森',
-								ability: '84',
-								offVal: '82',
-								denVal: '90',
-								rebVal: '76'
+								ability: 84,
+								offVal: 82,
+								denVal: 90,
+								rebVal: 76
 							},
 							pg: {
 								name: '库里',
-								ability: '93',
-								offVal: '96',
-								denVal: '80',
-								rebVal: '70'
+								ability: 93,
+								offVal: 96,
+								denVal: 80,
+								rebVal: 70
 							},
 						}
 					}
@@ -176,11 +176,11 @@
 				this.gameStartFlag = true;
 				this.timeGo();
 			},
-			// 争球
+			// fightBall
 			fightBall(){
 				let ranData = Math.random();
-				let homePlayerValue = this.getAbility({team:'home',ability:'ability', playerPos:'c'});
-				let awayPlayerValue = this.getAbility({team:'away',ability:'ability', playerPos: 'c'});
+				let homePlayerValue = this.getAbility({team:'home', playerPos:'c'});
+				let awayPlayerValue = this.getAbility({team:'away', playerPos: 'c'});
 				let criticalVal = homePlayerValue/(parseInt(homePlayerValue)+parseInt(awayPlayerValue));
 				if( ranData > criticalVal ){
 					// away
@@ -208,7 +208,7 @@
 					this.playerRightName = this._global.getPlayerNameByPos.call(this, this.offensiveTeam, pos);
 
 					// 得到下一步的行动
-					let actionName = nextAction(pos);
+					let actionName = this.nextAction(pos);
 
 					// 执行下一步动作
 					this.playerActions[actionName](pos);
@@ -220,12 +220,13 @@
 					});
 				}, 4000);
 			},
-			// 传球
+			// pass
 			passAFn(){
-
-
+				// who can get the ball
+				
+				console.log('pass');
 			},
-			// 计算球在哪个球员手上
+			// who has the ball
 			ballIsIn(team,abt){
 
 				let player = '';
@@ -260,14 +261,14 @@
 				}
 				return player;
 			},
-			// 计算该球员下一步的 action
+			// the next action is ?
 			nextAction(){
 
 				// action -> pass || shoot
 				let actionName = '';
 
 				// 获取时间比例
-				let timeRat = this.$store.gameRounds.roundTime / allRoundTime;
+				let timeRat = this.$store.state.gameRounds.roundTime / allRoundTime;
 				let passRat = 0;
 				let ran = Math.random();
 
@@ -288,7 +289,7 @@
 					passRat = this._global.passProba5;
 				}
 
-				return getAction(ran, passRat);
+				return getAction.call(this, ran, passRat);
 
 				function getAction(ran, rat){
 
@@ -303,7 +304,7 @@
 					}
 				}
 			},
-			// 计算篮板概率
+			// who can get the rebound
 			reboundAction(){
 				// 计算进攻/防守的篮板球获得概率
 				let offRebRat = this['reboundVal' + this._global.firstWordToUpper(this.offensiveTeam)] * this._global.reboundRatioOff;
@@ -323,10 +324,10 @@
 				// 进攻
 				this.offensive();
 			},
-			// 计算进球概率
+			// the ball would in ?
 			goal(){
 				let rnData = Math.random();
-				let offensiveVal = this.getAbility({team: this.offensiveTeam, playerPos: this.playerRight, ability: 'offVal'});
+				let offensiveVal = this.getAbility({playerPos: this.playerRight, ability: 'offVal'});
 				let denfensiveVal = this.getAbility({team: this.defensiveTeam, playerPos: this.playerRight, ability: 'denVal'});
 
 				let res = (offensiveVal - denfensiveVal/2)/100;
@@ -341,7 +342,7 @@
 					this.reboundAction();
 				}
 			},
-			// 得分
+			// goal
 			scoreFn(){
 				let player = this.originData[this.offensiveTeam].players[this.playerRight].name;
 				console.log( `${player} 得到两分` );
@@ -361,7 +362,7 @@
 					}
 				})
 			},
-			// 当前球权所属球队
+			// change the right
 			changeBallRight(team){
 				this.defensiveTeam = team;  
 				if( this.defensiveTeam === 'away' ){
@@ -378,12 +379,12 @@
 					flag: 'over'
 				});
 			},
-			// 获取能力值
-			getAbility(parmas){
+			// public: get ability of the player
+			getAbility({team=this.offensiveTeam, ability='ability', playerPos} = parmas){
 
-				return this.originData[parmas.team].players[parmas.playerPos][parmas.ability]
+				return this.originData[team].players[playerPos][ability]
 			},
-			// 计时开始
+			// time begin going
 			timeGo(){
 
 				this.timeGoTimer = setInterval(()=>{
@@ -396,16 +397,40 @@
 						flag: ''
 					});
 				}, 1000)
-			}
-		},
-		computed: {
-			reboundValHome(){
-				let players = this.originData.home.players;
-				return (players.c.rebVal * this._global.reboundRatioC +  players.pf.rebVal * this._global.reboundRatioPF + players.sf.rebVal * this._global.reboundRatioSF + players.sg.rebVal * this._global.reboundRatioSG + players.pg.rebVal * this._global.reboundRatioPG).toFixed(2);
 			},
-			reboundValAway(){
-				let players = this.originData.away.players;
-				return (players.c.rebVal * this._global.reboundRatioC +  players.pf.rebVal * this._global.reboundRatioPF + players.sf.rebVal * this._global.reboundRatioSF + players.sg.rebVal * this._global.reboundRatioSG + players.pg.rebVal * this._global.reboundRatioPG).toFixed(2);
+			// about the porbablity
+			fnProbablity({ability,team} = parmas){
+
+				let ran = Math.random();
+				let player = '';
+				let hsum = hc[ability] + hpf[ability] + hsf[ability] + hsg[ability] + hpg[ability];
+				let asum = ac[ability] + apf[ability] + asf[ability] + asg[ability] + apg[ability];
+				let { home: {hplayers: {hc, hpf, hsf, hsg, hpg}}, away: {aplayers: {ac, apf, asf, asg, apg}}} = this.originData;
+				if( team === 'home' ) {
+					let cpro  = hc[ability]  / hsum;
+					let pfpro = hpf[ability] / hsum +  cpro;
+					let sfpro = hsf[ability] / hsum + pfpro;
+					let sgpro = hsg[ability] / hsum + sfpro;
+					let pgpro = hpg[ability] / hsum + sgpro;
+				} else {
+					let cpro  = ac[ability]  / asum;
+					let pfpro = apf[ability] / asum +  cpro;
+					let sfpro = asf[ability] / asum + pfpro;
+					let sgpro = asg[ability] / asum + sfpro;
+					let pgpro = apg[ability] / asum + sgpro;
+				}
+				if ( ran < cpro ) {
+					player = 'c';
+				} else if ( ran < pfpro ) {
+					player = 'pf';
+				} else if ( ran < sfpro ) {
+					player = 'sf';
+				} else if ( ran < sgpro ) {
+					player = 'sg';
+				} else if ( ran < pgpro ) {
+					player = 'pg';
+				}
+				return player;
 			}
 		}
 	}
