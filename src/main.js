@@ -6,9 +6,11 @@ import router from './router'
 import store from './store'
 import baseStyle from '../global/less/base.less'
 import rule from '../global/js/rule.js'
+import Axios from 'axios'
 
-Vue.config.productionTip = false
+Vue.config.productionTip = false;
 Vue.prototype._global = rule;
+Vue.prototype.$http = Axios;
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

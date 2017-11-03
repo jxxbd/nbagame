@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Hello from '@/components/Hello'
+import Home from '@/components/Home'
 import Trace from '@/components/trace'
 import Game from '@/components/game'
 import TeamDetail from '@/components/team-detail'
@@ -12,8 +12,8 @@ export default new Router({
   routes: [
     {
       path: '/home',
-      name: 'Hello',
-      component: Hello
+      name: 'Home',
+      component: Home
     },
     {
       path: '/trace',

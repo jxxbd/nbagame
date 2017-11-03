@@ -16,10 +16,10 @@ export default {
 
 	// 阶段时间比例
 	timeRat1: 0.2,
-	timeRat1: 0.4,
-	timeRat1: 0.6,
-	timeRat1: 0.8,
-	timeRat1: 1,
+	timeRat2: 0.4,
+	timeRat3: 0.6,
+	timeRat4: 0.8,
+	timeRat5: 1,
 
 	//方法
 	// 首字母转大写

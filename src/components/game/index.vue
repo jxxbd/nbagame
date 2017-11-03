@@ -1,11 +1,8 @@
 <template>
 	<div class="game">
 		<div class="game-function">
-			<h3>比赛功能</h3>			
-			<input type="button" value="暂停">
-			<input type="button" value="换人">
-			<input type="button" value="战术">
-			<!-- 暂停,换人等 -->
+			<h3>教练模式</h3>			
+			<PausePage @changePauseStatu="fnPause" :gameStartFlag="gameStartFlag" :sectionEnd="sectionEnd" @changeSecendStatu="fnSecend"></PausePage>
 		</div>
 		<div class="game-info">
 			<h3>现场</h3>
@@ -21,22 +18,7 @@
 		<!-- 球场表现 -->
 		<div class="game-box">
 			<h3>球场表现</h3>
-			<div class="game-scene">
-				<div class="game-team game-home">
-					<span class="player player-c" :class="{'bg-green-default': (playerRight === 'c' && offensiveTeam === 'home'), 'bg-blue-info': playerRight !== 'c'}">C</span>
-					<span class="player player-pf" :class="{'bg-green-default': (playerRight==='pf' && offensiveTeam === 'home'), 'bg-blue-info': playerRight !== 'pf'}">PF</span>
-					<span class="player player-sf" :class="{'bg-green-default': (playerRight==='sf' && offensiveTeam === 'home'), 'bg-blue-info': playerRight !== 'sf'}">SF</span>
-					<span class="player player-sg" :class="{'bg-green-default': (playerRight==='sg' && offensiveTeam === 'home'), 'bg-blue-info': playerRight !== 'sg'}">SG</span>
-					<span class="player player-pg" :class="{'bg-green-default': (playerRight==='pg' && offensiveTeam === 'home'), 'bg-blue-info': playerRight !== 'pg'}">PG</span>
-				</div>
-				<div class="game-team game-away">
-					<span class="player player-c" :class="{'bg-green-default': (playerRight === 'c' && offensiveTeam === 'away'), 'bg-red-info': playerRight !== 'c'}">C</span>
-					<span class="player player-pf" :class="{'bg-green-default': (playerRight === 'pf' && offensiveTeam === 'away'), 'bg-red-info': playerRight !== 'pf'}">PF</span>
-					<span class="player player-sf" :class="{'bg-green-default': (playerRight === 'sf' && offensiveTeam === 'away'), 'bg-red-info': playerRight !== 'sf'}">SF</span>
-					<span class="player player-sg" :class="{'bg-green-default': (playerRight === 'sg' && offensiveTeam === 'away'), 'bg-red-info': playerRight !== 'sg'}">SG</span>
-					<span class="player player-pg" :class="{'bg-green-default': (playerRight === 'pg' && offensiveTeam === 'away'), 'bg-red-info': playerRight !== 'pg'}">PG</span>
-				</div>
-			</div>
+			<Scene :playerRight="playerRight" :offensiveTeam="offensiveTeam"></Scene>
 			<div class="btn game-start" :class="{'game-start-flag': gameStartFlag}" @click="gameStart">开始比赛</div>
 		</div>
 		<div class="game-statistics">
@@ -51,8 +33,11 @@
 	import TimeGo from './timeGo.vue'
 	import Situation from './situation.vue'
 	import RoundTime from './roundTime.vue'
+	import PausePage from './pause.vue'
+	import Scene from './scene.vue'
 
-	const allRoundTime = 24;
+
+	const allRoundTime = 12;
 	export default {
 		name: 'Game',
 		data(){
@@ -61,6 +46,8 @@
 				defensiveTeam: '',
 				playerRight: '',
 				gameStartFlag: false,
+				pauseState: 'false',
+				sectionEnd: false,
 				originData: {
 					home: {
 						teamName: '马刺',
@@ -160,24 +147,58 @@
 				}
 			}
 		},
+		created(){
+			this.$http.post('http://15.2.23.63:8080/api/getPlayerInfo',{
+				hometeam: '',
+				awayteam: ''
+			})
+			.then(response=>{
+				console.log(response)
+			})
+			.catch(error=>{
+				console.log(error);
+			})
+		},
 		components:{
 			FormEle,
 			TimeGo,
 			Situation,
-			RoundTime
+			RoundTime,
+			PausePage,
+			Scene
 		},
 		methods: {
+			// game start
 			gameStart(){
+
+				this.pauseState = 'false';
+
+				this.$store.commit({
+					type: 'reGameTime'
+				})
+
 				this.$store.commit({
 					type: 'updateGameInfo',
 					gameInfo: {infomation: `第${this.$store.state.gameRounds.currentRound}节比赛开始`, team: this.offensiveTeam}
 				})
+
 				!this.gameStartFlag && this.fightBall();
+				this.gameStartFlag && this.offensive();
 				this.gameStartFlag = true;
 				this.timeGo();
 			},
+			// game continue
+			gameContinue(){
+				this.$store.commit({
+					type: 'updateGameInfo',
+					gameInfo: {infomation: `比赛继续`, team: this.offensiveTeam}
+				})
+				this.timeGo();
+				this.offensive();
+			},
 			// fightBall
 			fightBall(){
+
 				let ranData = Math.random();
 				let homePlayerValue = this.getAbility({team:'home', playerPos:'c'});
 				let awayPlayerValue = this.getAbility({team:'away', playerPos: 'c'});
@@ -197,13 +218,18 @@
 					type: 'updateGameInfo',
 					gameInfo: {infomation: `${teamName}队获得球权`, team: this.offensiveTeam}
 				})
+				// 争球后发起首轮进攻
 				this.offensive();
 			},
 			// 进攻
-			offensive(){
+			offensive(posNow){
 
+				if(this.pauseState === 'true'){
+					return;
+				}
 				setTimeout(()=>{
-					let pos = this.ballIsIn(this.offensiveTeam, 'ability');
+
+					let pos = posNow || this.ballIsIn(this.offensiveTeam, 'ability');
 					this.playerRight = pos;
 					this.playerRightName = this._global.getPlayerNameByPos.call(this, this.offensiveTeam, pos);
 
@@ -218,13 +244,22 @@
 						type: 'updateGameInfo',
 						gameInfo: {infomation: `the ball is in ${this.playerRightName} \`s hands`, team: this.offensiveTeam}
 					});
-				}, 4000);
+				}, 2000);
 			},
 			// pass
-			passAFn(){
+			passAFn(pos){
+				// who pass the ball
+				let playerRightNamOld = this._global.getPlayerNameByPos.call(this, this.offensiveTeam, pos);
 				// who can get the ball
-				
-				console.log('pass');
+				let posNow = this.ballIsIn(this.offensiveTeam, 'ability');
+				this.playerRightName = this._global.getPlayerNameByPos.call(this, this.offensiveTeam, posNow);
+
+				if( playerRightNamOld !== this.playerRightName ){
+
+					console.log(`${playerRightNamOld} pass the ball to ${this.playerRightName}`);
+				}
+
+				this.offensive(posNow);
 			},
 			// who has the ball
 			ballIsIn(team,abt){
@@ -264,7 +299,7 @@
 			// the next action is ?
 			nextAction(){
 
-				// action -> pass || shoot
+				// action -> pass || shoot || inHand
 				let actionName = '';
 
 				// 获取时间比例
@@ -274,19 +309,22 @@
 
 				if( timeRat < this._global.timeRat1 ) {
 
-					passRat = this._global.passProba1;
+					passRat = this._global.passProba5;
 				} else if ( timeRat < this._global.timeRat2 ) {
 
-					passRat = this._global.passProba2;
+					passRat = this._global.passProba4;
 				} else if ( timeRat < this._global.timeRat3 ) {
 					
 					passRat = this._global.passProba3;
 				} else if ( timeRat < this._global.timeRat4 ) {
 					
-					passRat = this._global.passProba4;
+					passRat = this._global.passProba2;
 				} else if ( timeRat < this._global.timeRat5 ) {
 					
-					passRat = this._global.passProba5;
+					passRat = this._global.passProba1;
+				} else {
+					// round time over
+					passRat = 0;
 				}
 
 				return getAction.call(this, ran, passRat);
@@ -295,11 +333,9 @@
 
 					if ( ran < rat ) {
 
-						console.log(`${this.playerRightName} pass the ball`);
 						return 'passA';
 					} else {
 
-						console.log(`${this.playerRightName} will shoot`);
 						return 'shootA';
 					}
 				}
@@ -374,6 +410,7 @@
 					this.offensiveTeam = 'home';
 					this.defensiveTeam = 'away';
 				}
+				// 回合计时重新开始
 				this.$store.commit({
 					type: 'updateGameRoundsRoundTime',
 					flag: 'over'
@@ -390,7 +427,9 @@
 				this.timeGoTimer = setInterval(()=>{
 					this.$store.commit({type: 'timeGo'});
 					if( this.$store.state.gameTime.currentTime <= 0 ) {
-						clearInterval( this.timeGoTimer );
+						// 节次时间结束
+						this.fnPause('true');
+						this.sectionEnd = true;
 					};
 					this.$store.commit({
 						type: 'updateGameRoundsRoundTime',
@@ -431,6 +470,28 @@
 					player = 'pg';
 				}
 				return player;
+			},
+			// pause
+			fnPause(opt){
+
+				this.pauseState = opt;
+				if( opt === 'true' ){
+					clearInterval(this.timeGoTimer);
+				}else{
+					this.gameContinue();	
+				}
+			},
+			// change the state of section-end
+			fnSecend(){
+
+				this.sectionEnd = false;
+
+				this.$store.commit({
+
+					type: 'updateCurrentRound'
+				});
+
+				this.gameStart();
 			}
 		}
 	}
@@ -466,70 +527,6 @@
 			background-color: @white-normal;
 			color: @white-info;
 			cursor: wait;
-		}
-	}
-	.game-scene{	
-		display: flex;
-		.game-team{
-			flex: 1;
-			height: 400px;
-			.border(1px,@white-less);
-			text-align: center;
-			line-height: 400px;
-		}
-	}
-	.player{
-		height: 50px;
-		width: 50px;
-		border-radius: 100%;
-		display: inline-block;
-		line-height: 50px;
-		position: absolute;
-	}
-	.game-home{
-		position: relative;
-		.player-c{
-			left: 100px;
-			top: 100px;
-		}
-		.player-pf{
-			left: 100px;
-			top: 200px;
-		}
-		.player-sf{
-			left: 300px;
-			top: 50px;
-		}
-		.player-sg{
-			left: 300px;
-			top: 300px;
-		}
-		.player-pg{
-			left: 350px;
-			top: 200px;
-		}
-	}
-	.game-away{
-		position: relative;
-		.player-c{
-			right: 100px;
-			top: 100px;
-		}
-		.player-pf{
-			right: 100px;
-			top: 200px;
-		}
-		.player-sf{
-			right: 300px;
-			top: 50px;
-		}
-		.player-sg{
-			right: 300px;
-			top: 300px;
-		}
-		.player-pg{
-			right: 350px;
-			top: 200px;
 		}
 	}
 </style>

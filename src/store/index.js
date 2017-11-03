@@ -2,6 +2,8 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 
 Vue.use(Vuex);
+
+const oneRoundTime = 12;
 const store = new Vuex.Store({
 
 	state: {
@@ -12,7 +14,7 @@ const store = new Vuex.Store({
 		gameRounds: {  // 比赛回合
 			defaultRounds: 4,
 			currentRound: 1,
-			roundTime: 24
+			roundTime: oneRoundTime
 		},
 		gameInfoRealTime: {  // 比赛实时详情
 			infoList: []
@@ -20,11 +22,17 @@ const store = new Vuex.Store({
 		gameScore: {
 			homeScore: 0,
 			awayScore: 0
-		}
+		},
+		pauseTimes: 7  // 可用的暂停次数
 	},
+
+
 	mutations: {
 		timeGo(state){
 			state.gameTime.currentTime--;
+		},
+		reGameTime(state){
+			state.gameTime.currentTime = 1*10;
 		},
 		updateGameInfo(state, gameInfo){
 			state.gameInfoRealTime.infoList.unshift(gameInfo);
@@ -38,12 +46,19 @@ const store = new Vuex.Store({
 				state.gameScore.awayScore += score;
 			}
 		},
-		updateGameRoundsRoundTime(state, flag) {
+		updateGameRoundsRoundTime(state, data) {
+			let {flag} = data;
 			if( flag === 'over' ) {
-				state.gameRounds.roundTime = 24;
+				state.gameRounds.roundTime = oneRoundTime;
 			} else {
 				state.gameRounds.roundTime -= 1;
 			}
+		},
+		updatePauseTime(state){
+			state.pauseTimes--;
+		},
+		updateCurrentRound(state){
+			state.gameRounds.currentRound ++;
 		}
 	},
 	actions: {
