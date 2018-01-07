@@ -69,9 +69,6 @@
 		line-height: 50px;
 		display: flex;
 		.border(1px,@white-info);
-		.time-item{
-
-		}
 		.flex-box{
 			flex: 1;
 		}
